@@ -1,5 +1,8 @@
+import 'package:banco_douro/models/account.dart';
+import 'package:banco_douro/services/account_service.dart';
 import 'package:banco_douro/ui/styles/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 
 class AddAccountModal extends StatefulWidget {
   const AddAccountModal({super.key});
@@ -10,6 +13,11 @@ class AddAccountModal extends StatefulWidget {
 
 class _AddAccountModalState extends State<AddAccountModal> {
   String _accountType = "AMBROSIA";
+
+  TextEditingController _nameControler = TextEditingController();
+  TextEditingController _lastNameControler = TextEditingController();
+
+  bool isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -74,12 +82,14 @@ class _AddAccountModalState extends State<AddAccountModal> {
                 Column(
                   children: [
                     TextFormField(
+                      controller: _nameControler,
                       decoration: InputDecoration(labelText: "Nome"),
                     ),
                     SizedBox(
                       height: 32,
                     ),
                     TextFormField(
+                      controller: _lastNameControler,
                       decoration: InputDecoration(labelText: "Último nome"),
                     ),
                     SizedBox(
@@ -127,7 +137,11 @@ class _AddAccountModalState extends State<AddAccountModal> {
                       children: [
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () {},
+                            onPressed: (isLoading)
+                                ? null
+                                : () {
+                                    onButtonCancelClicked();
+                                  },
                             style: ButtonStyle(
                                 backgroundColor:
                                     WidgetStatePropertyAll(AppColor.lightGrey)),
@@ -142,14 +156,23 @@ class _AddAccountModalState extends State<AddAccountModal> {
                         ),
                         Expanded(
                           child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                onButtonSendClicked();
+                              },
                               style: ButtonStyle(
                                   backgroundColor:
                                       WidgetStatePropertyAll(AppColor.orange)),
-                              child: Text(
-                                "Adicionar",
-                                style: TextStyle(color: Colors.black),
-                              )),
+                              child: (isLoading)
+                                  ? SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                      ))
+                                  : Text(
+                                      "Adicionar",
+                                      style: TextStyle(color: Colors.black),
+                                    )),
                         )
                       ],
                     )
@@ -161,5 +184,37 @@ class _AddAccountModalState extends State<AddAccountModal> {
         ),
       ),
     );
+  }
+
+  onButtonCancelClicked() {
+    if (!isLoading) {
+      Navigator.pop(context);
+    }
+  }
+
+  onButtonSendClicked() async {
+    if (!isLoading) {
+      setState(() {
+        isLoading = true;
+      });
+
+      String name = _nameControler.text;
+      String lastName = _lastNameControler.text;
+
+      Account account = Account(
+        id: Uuid().v1(),
+        name: name,
+        lastName: lastName,
+        balance: 0,
+        accountType: _accountType,
+      );
+
+      await AccountService().addAccount(account);
+      closeModal();
+    }
+  }
+
+  closeModal() {
+    Navigator.pop(context);
   }
 }
